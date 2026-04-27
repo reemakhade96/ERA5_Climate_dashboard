@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Climate Extremes Decision Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",Arial,sans-serif}
+    html{scroll-behavior:smooth} body{background:linear-gradient(135deg,#e6f4f1,#dceefb);color:#1f2933}
+    .app-shell{display:grid;grid-template-columns:330px 1fr;min-height:100vh}
+    .sidebar{background:linear-gradient(180deg,#e9f3ea 0%,#dcefe2 55%,#d7ecf4 100%);border-right:1px solid #c9ddcf;color:#23352b;padding:18px;position:sticky;top:0;height:100vh;overflow-y:auto}
+    .brand,.panel{background:rgba(255,255,255,.74);border:1px solid #cfe1d3;border-radius:18px;padding:15px;margin-bottom:14px;box-shadow:0 7px 18px rgba(31,53,43,.07);backdrop-filter:blur(5px)}
+    .brand h1{font-size:22px;line-height:1.25;margin-bottom:8px;color:#214d37}.brand p,.note,.nav-list a,.check-label{font-size:13px;line-height:1.55;color:#53645a}.panel h3{font-size:15px;margin-bottom:12px;color:#214d37}
+    .group{margin-bottom:12px;display:grid;gap:7px}.group label{font-size:13px;font-weight:700}.group input[type="date"]{padding:10px;border:1px solid #cbd9d0;border-radius:10px;background:#fff}.group input[type="range"],.check-label input{accent-color:#3a7d54}.range-row{display:flex;justify-content:space-between;font-size:11px;color:#69766d}.selected-range{background:#f4faf5;border:1px solid #d5e5d8;padding:10px;border-radius:12px;font-size:13px;line-height:1.6}
+    .check-label{display:flex;gap:9px;align-items:center;background:#f7fbf8;border:1px solid #dce9df;padding:9px 10px;border-radius:12px;margin-bottom:8px;cursor:pointer}.submit-btn{width:100%;padding:12px;background:linear-gradient(90deg,#4f9b69,#a9d8b4);border:0;border-radius:12px;font-weight:800;color:#10251a;cursor:pointer}.submit-btn:hover{filter:brightness(1.04)}
+    .nav-list{list-style:none;display:grid;gap:8px}.nav-subtitle{font-size:14px;font-weight:900;color:#214d37;margin:14px 0 8px;padding:9px 10px;background:linear-gradient(90deg,#d9f2df,#e6f7fb);border:1px solid #c5dfcf;border-radius:10px;letter-spacing:.2px}.nav-list li{background:#f7fbf8;border:1px solid #dce9df;border-radius:10px}.nav-list a{display:block;text-decoration:none;padding:9px 10px}.nav-list a:hover{color:#214d37;text-decoration:underline}
+    .content{padding:18px}.hero,.map-panel,.dataset-header,.plot-card,.result-card,.info-card,.error-box{background:#fff;border:1px solid #dfe8e1;border-radius:18px;box-shadow:0 7px 18px rgba(16,24,40,.06)}.hero{padding:18px;margin-bottom:16px;background:linear-gradient(135deg,#d4f1ec,#cce3f6)}.hero h2{font-size:28px;color:#214d37;margin-bottom:6px}.hero p{font-size:14px;line-height:1.65;color:#526170}.info-card{padding:15px;margin-bottom:16px;background:linear-gradient(135deg,#fffaf0,#ffffff)}.info-card h3{font-size:18px;color:#7a4a00;margin-bottom:8px}.info-card p{font-size:14px;line-height:1.65;color:#4b5563}.error-box{padding:14px;margin-bottom:16px;background:#fff4f4;border-color:#f0b8b8;color:#8a2525}.map-panel{padding:14px;margin-bottom:16px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.section-head h3{font-size:20px;color:#214d37}.tag{background:#e9f7ed;color:#214d37;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800}#map{height:430px;width:100%;border-radius:14px;border:1px solid #d8e2db}.study-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch;margin-bottom:16px}
+.study-card{background:#fff;border:1px solid #dfe8e1;border-radius:18px;box-shadow:0 7px 18px rgba(16,24,40,.06);padding:14px}
+.study-card h3{font-size:20px;color:#214d37;margin-bottom:10px}
+.study-desc{height:430px;overflow:auto;background:linear-gradient(135deg,#ffffff,#f1f8f9)}
+.dataset-info{display:grid;gap:10px;margin-top:8px}
+.dataset-info .info-block{background:#f7fbf8;border:1px solid #dce9df;border-radius:14px;padding:12px}
+.dataset-info h4{font-size:15px;color:#214d37;margin-bottom:6px}
+.dataset-info p,.dataset-info li{font-size:13px;line-height:1.5;color:#4b5563}
+.study-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.study-meta div{background:#eef8f1;border:1px solid #d8e8dc;border-radius:10px;padding:8px;font-size:13px;color:#3f4f46}.study-meta b{display:block;color:#214d37;margin-bottom:2px}.dataset-heading{font-size:16px;font-weight:900;color:#214d37;margin:12px 0 8px;padding:8px 10px;background:linear-gradient(90deg,#dff3e5,#e7f7fb);border-radius:10px;border:1px solid #d5e8dc}
+.dataset-info ul{margin-left:18px}
+.project-card{padding:15px;margin-bottom:16px;background:linear-gradient(135deg,#ffffff,#eefaf5);border:1px solid #dfe8e1;border-radius:18px;box-shadow:0 7px 18px rgba(16,24,40,.06)}
+.project-card h3{font-size:18px;color:#214d37;margin-bottom:8px}.project-card p{font-size:14px;line-height:1.65;color:#3f4f46}
+.dataset-block{margin-bottom:28px}.dataset-header{padding:16px;margin-bottom:14px;background:linear-gradient(135deg,#e8f8f5,#e3f2fd)}.dataset-header h3{font-size:23px;color:#214d37;margin-bottom:6px}.dataset-header p{font-size:14px;color:#607080;line-height:1.55}.window-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:16px;align-items:start}.plot-grid{display:grid;grid-template-columns:1fr;gap:14px}.plot-card{padding:14px;background:linear-gradient(135deg,#ffffff,#f1f8f9);transition:.25s}.plot-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(31,53,43,.10)}.plot-card h4{font-size:17px;color:#243b53;margin-bottom:6px}.plot-card p{font-size:13px;color:#64748b;line-height:1.5;margin-bottom:10px}.plot-box{min-height:240px;border:1px dashed #cdd7e1;background:#fbfdff;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px}.plot-box img{width:100%;height:auto;border-radius:8px;background:white}.plot-box.tall img{max-height:1200px;object-fit:contain}.placeholder{text-align:center;color:#7b8794;font-size:14px;line-height:1.6;padding:20px}.result-column{display:grid;gap:14px;position:sticky;top:14px}.result-card{padding:15px;background:linear-gradient(135deg,#ffffff,#f1f8f9)}.result-card h4{font-size:18px;color:#214d37;margin-bottom:10px}.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.metric{background:#f4f8f5;border:1px solid #e0ebe3;border-radius:12px;padding:10px}.metric small{display:block;font-size:11px;color:#64748b;margin-bottom:4px}.metric b{font-size:16px;color:#17212b}.decision{border-radius:14px;padding:12px;line-height:1.6;font-size:14px;margin-top:10px}.decision.safe{background:#eefaf2;border:1px solid #bfe5ca;color:#245b34}.decision.alert{background:#fff2e5;border:1px solid #ffc999;color:#7a3b00}.result-card p{font-size:14px;color:#4b5563;line-height:1.65;margin-top:9px}.loader{position:fixed;inset:0;background:rgba(240,244,248,.78);display:none;align-items:center;justify-content:center;z-index:9999}.loader-box{background:#fff;padding:26px 32px;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.15);text-align:center;max-width:530px}.spinner{width:54px;height:54px;border:6px solid #dbe7ef;border-top-color:#3a7d54;border-radius:50%;animation:spin .85s linear infinite;margin:auto auto 12px}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:1200px){.app-shell{grid-template-columns:1fr}.sidebar{height:auto;position:relative}.window-grid{grid-template-columns:1fr}.study-grid{grid-template-columns:1fr}.result-column{position:relative;top:auto}}@media(max-width:700px){.metric-grid{grid-template-columns:1fr}.hero h2{font-size:23px}#map{height:230px}}
+  </style>
+</head>
+<body>
+  <div class="loader" id="loader"><div class="loader-box"><div class="spinner"></div><b>Processing ERA5 & IMD data for selected period… Generating India-specific plots and analytical results</b></div></div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><h1>Climate Extremes Decision Dashboard</h1><p>ERA5 and IMD climate analysis with India-only plots, seasonal behaviour, JJAS monsoon sequence, extreme events and drought decision support.</p></div>
+      <form method="POST" action="/update_dashboard" id="dashboardForm">
+        <div class="panel"><h3>Time Selection</h3>
+          <div class="group"><label for="start_date">Start Date</label><input type="date" id="start_date" name="start_date" value="{{ start_date }}" min="1991-01-01" max="2023-12-31" required></div>
+          <div class="group"><label for="end_date">End Date</label><input type="date" id="end_date" name="end_date" value="{{ end_date }}" min="1991-01-01" max="2023-12-31" required></div>
+          <div class="group"><label>Start Slider</label><input type="range" id="start_slider" min="0" max="12052" step="1" oninput="syncFromSlider()"><div class="range-row"><span>1991</span><span>2023</span></div></div>
+          <div class="group"><label>End Slider</label><input type="range" id="end_slider" min="0" max="12052" step="1" oninput="syncFromSlider()"><div class="range-row"><span>1991</span><span>2023</span></div></div>
+          <div class="selected-range"><div><b>Selected Start:</b> <span id="range_start_text">{{ start_date }}</span></div><div><b>Selected End:</b> <span id="range_end_text">{{ end_date }}</span></div></div>
+        </div>
+        <div class="panel"><h3>Dataset Selection</h3>
+          <label class="check-label"><input type="checkbox" name="show_era5" {% if show_era5 %}checked{% endif %}> ERA5: Temperature, Rainfall, Soil Moisture</label>
+          <label class="check-label"><input type="checkbox" name="show_imd" {% if show_imd %}checked{% endif %}> IMD: Observed Temperature and Rainfall</label>
+          <button type="submit" class="submit-btn">Update Dashboard</button><div class="note" style="margin-top:10px">Plots and decision text update according to selected date range.</div>
+        </div>
+      </form>
+      <div class="panel"><h3>Graphical Plots</h3>
+        <div class="nav-subtitle">ERA5 Plots</div>
+        <ul class="nav-list">
+          <li><a href="#era5-annual">1) Spatial Annual Mean Plot</a></li>
+          <li><a href="#era5-seasonal-cycle">2) Seasonal Cycle</a></li>
+          <li><a href="#era5-jjas">3) JJAS</a></li>
+          <li><a href="#era5-trend">4) Trend Line</a></li>
+          <li><a href="#era5-corr">5) Correlation Plots</a></li>
+          <li><a href="#era5-extreme-hist">6) Extreme Months vs Extreme Events</a></li>
+          <li><a href="#era5-extreme-trend">7) Extreme Trend Plot</a></li>
+        </ul>
+        <div class="nav-subtitle">IMD Plots</div>
+        <ul class="nav-list">
+          <li><a href="#imd-annual">1) Spatial Annual Mean Plot</a></li>
+          <li><a href="#imd-seasonal-cycle">2) Seasonal Cycle</a></li>
+          <li><a href="#imd-jjas">3) JJAS</a></li>
+          <li><a href="#imd-trend">4) Trend Line</a></li>
+          <li><a href="#imd-extreme-hist">5) Extreme Months vs Extreme Events</a></li>
+          <li><a href="#imd-extreme-trend">6) Extreme Trend Plot</a></li>
+        </ul>
+      </div>
+    </aside>
+    <main class="content">
+      <section class="hero"><h2>Impact of Extreme Temperature and Precipitation on Soil Moisture</h2><p>This dashboard uses ERA5 model/reanalysis data and IMD observational data to analyse annual patterns, seasonal cycle, JJAS monsoon behaviour, trends, correlations and extreme events over India.</p></section>
+      {% if error_message %}<div class="error-box"><b>Error:</b> {{ error_message }}</div>{% endif %}
+      <section class="project-card">
+        <h3>About this project</h3>
+        <p>This dashboard communicates how extreme temperature and precipitation patterns influence soil moisture conditions over India. It combines ERA5 reanalysis data and IMD observational data to show spatial patterns, seasonal cycle, JJAS monsoon behaviour, trends, correlations and extreme events. The final result section supports drought-related interpretation by linking rainfall deficit, temperature stress and soil-moisture response in a simple decision-support format.</p>
+      </section>
+
+      <section class="study-grid">
+        <div class="study-card">
+          <div class="section-head"><h3>Study Area Map</h3><span class="tag">India Boundary</span></div>
+          <div id="map"></div>
+        </div>
+        <div class="study-card study-desc">
+          <h3>Study Area and Datasets</h3>
+          <div class="dataset-info">
+            <div class="info-block">
+              <h4>Study Area Name: India</h4>
+              <p>India is selected as the study region to analyse climate extremes, monsoon rainfall behaviour and soil-moisture response. All spatial outputs are clipped/masked to the India region for dashboard interpretation.</p>
+              <div class="study-meta">
+                <div><b>Latitude Range</b>6°N to 37.5°N</div>
+                <div><b>Longitude Range</b>68°E to 97.5°E</div>
+              </div>
+            </div>
+            <div class="dataset-heading">Dataset Description</div>
+            <div class="info-block">
+              <h4>Dataset 1: ERA5 Monthly Averaged Data</h4>
+              <ul>
+                <li><b>Period:</b> 1990-2023 / selected dashboard range</li>
+                <li><b>Resolution:</b> 0.25° × 0.25°</li>
+                <li><b>Source:</b> ECMWF ERA5 reanalysis</li>
+                <li><b>Temperature:</b> 2 m temperature, converted from Kelvin (K) to °C</li>
+                <li><b>Precipitation:</b> Total precipitation, converted from metre (m) to millimetre (mm)</li>
+                <li><b>Soil Moisture:</b> Volumetric soil water layer 1 (swvl1), unit m³/m³</li>
+              </ul>
+            </div>
+            <div class="info-block">
+              <h4>Dataset 2: IMD Observational Data</h4>
+              <ul>
+                <li><b>Period:</b> 1991-2023 / selected dashboard range</li>
+                <li><b>Temperature:</b> Tmax and Tmin observational data, 1° × 1° resolution</li>
+                <li><b>Rainfall:</b> Daily rainfall data, 0.25° × 0.25° resolution</li>
+                <li><b>Source:</b> IMD Data Supply Portal (IMD DSP)</li>
+                <li><b>Temperature Unit:</b> °C; mean temperature derived as (Tmax + Tmin) / 2</li>
+                <li><b>Rainfall Unit:</b> mm; aggregated to monthly, seasonal and annual totals</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {% macro plot_card(pid,title,img,desc,tall=False) -%}
+      <div class="plot-card" id="{{ pid }}"><h4>{{ title }}</h4><p>{{ desc }}</p><div class="plot-box {% if tall %}tall{% endif %}">{% if img %}<img src="data:image/png;base64,{{ img }}" alt="{{ title }}">{% else %}<div class="placeholder">{{ title }} will appear after update.</div>{% endif %}</div></div>
+      {%- endmacro %}
+
+      {% if show_era5 %}
+      <section class="dataset-block" id="era5-section"><div class="dataset-header"><h3>ERA5 Plots</h3><p>Sequence: spatial annual mean, seasonal cycle, JJAS, trend line, correlation plots, extreme months vs extreme events and extreme trend plot.</p></div><div class="window-grid"><div class="plot-grid">
+        {{ plot_card('era5-annual','1) Spatial Annual Mean Plot',era5.get('annual'),'Temperature, precipitation and soil-moisture spatial mean maps using fixed reference colour scales.') }}
+        {{ plot_card('era5-seasonal-cycle','2) Seasonal Cycle',era5.get('seasonal_cycle'),'Monthly climatological cycle of temperature, precipitation and soil moisture.') }}
+        {{ plot_card('era5-jjas','3) JJAS',era5.get('jjas'),'JJAS monsoon spatial pattern for temperature, precipitation and soil moisture.') }}
+        {{ plot_card('era5-trend','4) Trend Line',era5.get('trend'),'Annual trend lines with slope for climate variables.') }}
+        {{ plot_card('era5-corr','5) Correlation Plots',era5.get('corr'),'Pre-monsoon, during monsoon and post-monsoon correlation plots.', True) }}
+        {{ plot_card('era5-extreme-hist','6) Extreme Months vs Extreme Events',era5.get('extreme_hist'),'Seasonal comparison of extreme months and separate extreme events.') }}
+        {{ plot_card('era5-extreme-trend','7) Extreme Trend Plot',era5.get('extreme_trend'),'Trend of extreme months and extreme event frequency.', True) }}
+      </div><aside class="result-column" id="era5-results"><div class="result-card"><h4>ERA5 Result Values</h4>{% if era5_metrics %}<div class="metric-grid"><div class="metric"><small>Mean Temperature</small><b>{{ era5_metrics.mean_temp }} °C</b></div><div class="metric"><small>Mean Rainfall</small><b>{{ era5_metrics.mean_rain }} mm</b></div><div class="metric"><small>Mean Soil Moisture</small><b>{{ era5_metrics.mean_sm }} m³/m³</b></div><div class="metric"><small>Dry Years</small><b>{{ era5_metrics.dry_months }}</b></div><div class="metric"><small>Temp Trend</small><b>{{ era5_metrics.temp_slope }} °C/yr</b></div><div class="metric"><small>Rain Trend</small><b>{{ era5_metrics.rain_slope }} mm/yr</b></div><div class="metric"><small>SM Trend</small><b>{{ era5_metrics.sm_slope }}/yr</b></div><div class="metric"><small>Watch Location</small><b>{{ era5_metrics.hotspot_lat }}, {{ era5_metrics.hotspot_lon }}</b></div></div><div class="decision {{ era5_metrics.drought_class }}"><b>{{ era5_metrics.drought_status }}</b><br>{{ era5_metrics.conclusion }}<br><b>Area:</b> {{ era5_metrics.hotspot_area }}</div><p><b>Decision support policy:</b> {{ era5_metrics.policy }}</p>{% else %}<div class="placeholder">ERA5 result values will appear after clicking update.</div>{% endif %}</div></aside></div></section>
+      {% endif %}
+
+      {% if show_imd %}
+      <section class="dataset-block" id="imd-section"><div class="dataset-header"><h3>IMD Plots</h3><p>Observed climate analysis using the same 7-section dashboard structure.</p></div><div class="window-grid"><div class="plot-grid">
+        {{ plot_card('imd-annual','1) Spatial Annual Mean Plot',imd.get('annual'),'Observed temperature and rainfall spatial mean maps.') }}
+        {{ plot_card('imd-seasonal-cycle','2) Seasonal Cycle',imd.get('seasonal_cycle'),'Monthly climatological cycle of observed temperature and rainfall.') }}
+        {{ plot_card('imd-jjas','3) JJAS',imd.get('jjas'),'JJAS monsoon spatial pattern for observed temperature and rainfall.') }}
+        {{ plot_card('imd-trend','4) Trend Line',imd.get('trend'),'Annual observed temperature and rainfall trends.') }}
+        {{ plot_card('imd-corr','5) Correlation Plots',imd.get('corr'),'Pre-monsoon, during monsoon and post-monsoon correlation plots.') }}
+        {{ plot_card('imd-extreme-hist','6) Extreme Months vs Extreme Events',imd.get('extreme_hist'),'Seasonal comparison of observed extreme months and events.') }}
+        {{ plot_card('imd-extreme-trend','7) Extreme Trend Plot',imd.get('extreme_trend'),'Trend of observed extreme months and event frequency.', True) }}
+      </div><aside class="result-column" id="imd-results"><div class="result-card"><h4>IMD Result Values</h4>{% if imd_metrics %}<div class="metric-grid"><div class="metric"><small>Mean Temperature</small><b>{{ imd_metrics.mean_temp }} °C</b></div><div class="metric"><small>Mean Rainfall</small><b>{{ imd_metrics.mean_rain }} mm</b></div><div class="metric"><small>Rainfall Normal</small><b>{{ imd_metrics.rainfall_normal }} mm</b></div><div class="metric"><small>Latest Rainfall</small><b>{{ imd_metrics.latest_rain }} mm</b></div><div class="metric"><small>Rain Deficit</small><b>{{ imd_metrics.rain_deficit }}%</b></div><div class="metric"><small>Dry Years</small><b>{{ imd_metrics.dry_years }}</b></div><div class="metric"><small>Temp Trend</small><b>{{ imd_metrics.temp_slope }} °C/yr</b></div><div class="metric"><small>Watch Location</small><b>{{ imd_metrics.hotspot_lat }}, {{ imd_metrics.hotspot_lon }}</b></div></div><div class="decision {{ imd_metrics.drought_class }}"><b>{{ imd_metrics.drought_status }}</b><br>{{ imd_metrics.conclusion }}<br><b>Area:</b> {{ imd_metrics.hotspot_area }}</div><p><b>Decision support policy:</b> {{ imd_metrics.policy }}</p>{% else %}<div class="placeholder">IMD result values will appear after clicking update.</div>{% endif %}</div></aside></div></section>
+      {% endif %}
+    </main>
+  </div>
+  <script>
+    const minBaseDate=new Date('1991-01-01T00:00:00');function pad(n){return String(n).padStart(2,'0')}function offsetToDateString(offset){const d=new Date(minBaseDate);d.setDate(minBaseDate.getDate()+Number(offset));return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}function dateStringToOffset(s){const d=new Date(s+'T00:00:00');return Math.round((d-minBaseDate)/(1000*60*60*24))}function syncFromSlider(){const ss=document.getElementById('start_slider'),es=document.getElementById('end_slider');let sv=Number(ss.value),ev=Number(es.value);if(sv>ev){[sv,ev]=[ev,sv];ss.value=sv;es.value=ev}const sd=offsetToDateString(sv),ed=offsetToDateString(ev);document.getElementById('start_date').value=sd;document.getElementById('end_date').value=ed;document.getElementById('range_start_text').textContent=sd;document.getElementById('range_end_text').textContent=ed}function syncFromDate(){const sd=document.getElementById('start_date').value,ed=document.getElementById('end_date').value;document.getElementById('start_slider').value=dateStringToOffset(sd);document.getElementById('end_slider').value=dateStringToOffset(ed);document.getElementById('range_start_text').textContent=sd;document.getElementById('range_end_text').textContent=ed}document.getElementById('start_date').addEventListener('change',syncFromDate);document.getElementById('end_date').addEventListener('change',syncFromDate);syncFromDate();document.getElementById('dashboardForm').addEventListener('submit',()=>{document.getElementById('loader').style.display='flex'});window.addEventListener('pageshow',()=>{document.getElementById('loader').style.display='none'});
+    const map=L.map('map',{center:[22.9734,78.6569],zoom:4.4,zoomControl:true});
+    const light=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+    const street=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'});
+    const centre=L.marker([22.9734,78.6569]).addTo(map).bindPopup('Study area centre: India');
+    fetch('/india_boundary')
+      .then(response=>response.json())
+      .then(data=>{
+        if(data.error){throw new Error(data.error)}
+        const indiaBoundaryLayer=L.geoJSON(data,{
+          style:{color:'#2f7d5b',weight:2.8,fillColor:'#8fd1a3',fillOpacity:0.10},
+          onEachFeature:(feature,layer)=>layer.bindPopup('Study Area: India boundary from shapefile (EPSG:4326)')
+        }).addTo(map);
+        map.fitBounds(indiaBoundaryLayer.getBounds(),{padding:[18,18]});
+        L.control.layers({'Light':light,'Street':street},{'India Boundary':indiaBoundaryLayer,'India Centre':centre},{collapsed:true}).addTo(map);
+      })
+      .catch(error=>{
+        console.log('Boundary loading issue:',error);
+        map.setView([22.9734,78.6569],4.4);
+        L.control.layers({'Light':light,'Street':street},{'India Centre':centre},{collapsed:true}).addTo(map);
+      });
+    L.control.scale({imperial:false}).addTo(map);
+  </script>
+</body>
+</html>
